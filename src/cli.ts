@@ -23,15 +23,17 @@ import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-j
 // @ts-expect-error Required for wallet sync
 globalThis.WebSocket = WebSocket;
 
-// Must match the privateStateId used at deploy time so the CLI reconnects to
-// the same private state. The hello-world contract has no witnesses (empty state).
-const PRIVATE_STATE_ID = 'helloWorldPrivateState';
+// Select the compiled/deployed contract with CONTRACT_NAME. The default keeps
+// the original hello-world CLI behavior; `CONTRACT_NAME=counter npm run cli`
+// exposes the Level 1 counter interaction menu.
+const CONTRACT_NAME = process.env.CONTRACT_NAME?.trim() || 'hello-world';
+const PRIVATE_STATE_ID = `${CONTRACT_NAME === 'counter' ? 'counter' : 'helloWorld'}PrivateState`;
 
 const { network, config: networkConfig } = resolveNetwork();
 const SEED = getOrCreateSeed(network);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const zkConfigPath = path.resolve(__dirname, '..', 'contracts', 'managed', 'hello-world');
+const zkConfigPath = path.resolve(__dirname, '..', 'contracts', 'managed', CONTRACT_NAME);
 
 // Load compiled contract
 const contractPath = path.join(zkConfigPath, 'contract', 'index.js');
@@ -42,9 +44,9 @@ if (!fs.existsSync(contractPath)) {
   process.exit(1);
 }
 
-const HelloWorld = await import(pathToFileURL(contractPath).href);
+const ContractModule = await import(pathToFileURL(contractPath).href);
 
-const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
+const compiledContract = CompiledContract.make(CONTRACT_NAME, ContractModule.Contract).pipe(
   CompiledContract.withVacantWitnesses,
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );
@@ -80,7 +82,7 @@ async function createProviders(walletCtx: WalletContext) {
 
   return {
     privateStateProvider: levelPrivateStateProvider({
-      privateStateStoreName: 'hello-world-state',
+      privateStateStoreName: `${CONTRACT_NAME}-state`,
       accountId,
       privateStoragePasswordProvider: () => privateStatePassword,
     }),
@@ -107,7 +109,9 @@ async function main() {
     console.error(`No deploy on file for network ${network}. Run \`npm run setup -- --network ${network}\` first.`);
     process.exit(1);
   }
-  console.log(`  Contract: ${deployment.address}`);
+  const deploymentAddress = deployment.address;
+  console.log(`  Contract: ${CONTRACT_NAME}`);
+  console.log(`  Address: ${deploymentAddress}`);
   console.log(`  Network: ${network}\n`);
 
   try {
@@ -154,19 +158,30 @@ async function main() {
 
     const deployed: any = await findDeployedContract(providers, {
       compiledContract: compiledContract as any,
-      contractAddress: deployment.address,
+      contractAddress: deploymentAddress,
       privateStateId: PRIVATE_STATE_ID,
       initialPrivateState: {},
     });
 
     console.log('  ✅ Connected!\n');
 
+    async function readCounter() {
+      const contractState = await providers.publicDataProvider.queryContractState(deploymentAddress);
+      if (!contractState) return undefined;
+      return ContractModule.ledger(contractState.data) as { counter: bigint; lastDelta: bigint };
+    }
+
     // Interactive CLI loop
     let running = true;
     while (running) {
       console.log('─── Menu ───────────────────────────────────────────────────────');
-      console.log('  1. Store a message');
-      console.log('  2. Read current message');
+      if (CONTRACT_NAME === 'counter') {
+        console.log('  1. Increment counter');
+        console.log('  2. Read counter state');
+      } else {
+        console.log('  1. Store a message');
+        console.log('  2. Read current message');
+      }
       console.log('  3. Check wallet balance');
       console.log('  4. Exit\n');
 
@@ -174,6 +189,25 @@ async function main() {
 
       switch (choice.trim()) {
         case '1': {
+          if (CONTRACT_NAME === 'counter') {
+            const deltaText = await rl.question('  Public delta: ');
+            const capText = await rl.question('  Secret cap (private witness): ');
+            try {
+              const publicDelta = BigInt(deltaText.trim());
+              const secretCap = BigInt(capText.trim());
+              if (publicDelta < 0n || secretCap < 0n || publicDelta > 65535n || secretCap > 65535n) {
+                throw new Error('Values must be integers between 0 and 65535.');
+              }
+              console.log('\n  Submitting increment (this may take 30-60 seconds)...');
+              const tx = await deployed.callTx.increment(publicDelta, secretCap);
+              console.log(`\n  ✅ Counter incremented by ${publicDelta}.`);
+              console.log(`  Transaction ID: ${tx.public.txId}`);
+              console.log(`  Block height: ${tx.public.blockHeight}\n`);
+            } catch (error) {
+              console.error('\n  ❌ Increment failed:', error instanceof Error ? error.message : error);
+            }
+            break;
+          }
           const message = await rl.question('  Enter your message: ');
           console.log('\n  Submitting transaction (this may take 30-60 seconds)...');
           try {
@@ -188,11 +222,26 @@ async function main() {
         }
 
         case '2': {
+          if (CONTRACT_NAME === 'counter') {
+            console.log('\n  Reading counter state from blockchain...');
+            try {
+              const state = await readCounter();
+              if (state) {
+                console.log(`\n  📊 Counter: ${state.counter}`);
+                console.log(`  Last delta: ${state.lastDelta}\n`);
+              } else {
+                console.log('\n  📊 No counter state found.\n');
+              }
+            } catch (error) {
+              console.error('\n  ❌ Failed:', error instanceof Error ? error.message : error);
+            }
+            break;
+          }
           console.log('\n  Reading message from blockchain...');
           try {
-            const contractState = await providers.publicDataProvider.queryContractState(deployment.address);
+            const contractState = await providers.publicDataProvider.queryContractState(deploymentAddress);
             if (contractState) {
-              const ledgerState = HelloWorld.ledger(contractState.data);
+              const ledgerState = ContractModule.ledger(contractState.data);
               const message = Buffer.from(ledgerState.message).toString();
               console.log(`\n  📋 Current message: "${message}"\n`);
             } else {
