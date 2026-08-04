@@ -22,6 +22,27 @@ async function waitFor(predicate: () => Promise<boolean>, timeoutMs = 60_000, la
   throw new Error(`Timed out waiting for ${label}`);
 }
 
+async function waitForLedger(
+  predicate: (ledger: { counter: bigint; lastDelta: bigint }) => boolean,
+  label: string,
+): Promise<{ counter: bigint; lastDelta: bigint }> {
+  let latest: { counter: bigint; lastDelta: bigint } | undefined;
+  await waitFor(
+    async () => {
+      try {
+        latest = await deployed.queryLedger();
+        return predicate(latest);
+      } catch {
+        // The indexer can briefly lag after a transaction or deployment.
+        return false;
+      }
+    },
+    60_000,
+    label,
+  );
+  return latest!;
+}
+
 beforeAll(async () => {
   deployed = await deployCounter();
 }, LONG_TIMEOUT);
@@ -35,7 +56,7 @@ describe('counter contract — circuit logic', () => {
     'accepts an increment whose disclosed delta is within the secret cap',
     async () => {
       await expect(deployed.callTx.increment(2n, 5n)).resolves.toBeDefined();
-      await waitFor(async () => (await deployed.queryLedger()).counter === 2n, 60_000, 'counter === 2');
+      await waitForLedger((ledger) => ledger.counter === 2n, 'counter === 2');
     },
     LONG_TIMEOUT,
   );
@@ -56,20 +77,45 @@ describe('counter contract — circuit logic', () => {
 
 describe('counter contract — state transitions', () => {
   it(
+    'accepts the exact boundary where public delta equals the secret cap',
+    async () => {
+      const before = await deployed.queryLedger();
+      await expect(deployed.callTx.increment(4n, 4n)).resolves.toBeDefined();
+      const state = await waitForLedger(
+        (ledger) => ledger.counter === before.counter + 4n && ledger.lastDelta === 4n,
+        'exact-cap increment',
+      );
+      expect(state.counter).toBe(before.counter + 4n);
+      expect(state.lastDelta).toBe(4n);
+    },
+    LONG_TIMEOUT,
+  );
+
+  it(
+    'allows a zero delta without changing the cumulative counter',
+    async () => {
+      const before = await deployed.queryLedger();
+      await expect(deployed.callTx.increment(0n, 0n)).resolves.toBeDefined();
+      const state = await waitForLedger(
+        (ledger) => ledger.counter === before.counter && ledger.lastDelta === 0n,
+        'zero-delta increment',
+      );
+      expect(state.counter).toBe(before.counter);
+      expect(state.lastDelta).toBe(0n);
+    },
+    LONG_TIMEOUT,
+  );
+
+  it(
     'tracks the cumulative count across sequential increments',
     async () => {
       const { counter: before } = await deployed.queryLedger();
       const delta = 3n;
       await expect(deployed.callTx.increment(delta, delta + 1n)).resolves.toBeDefined();
-      await waitFor(
-        async () => {
-          const s = await deployed.queryLedger();
-          return s.counter === before + delta && s.lastDelta === delta;
-        },
-        60_000,
+      const s = await waitForLedger(
+        (ledger) => ledger.counter === before + delta && ledger.lastDelta === delta,
         'counter/lastDelta updated',
       );
-      const s = await deployed.queryLedger();
       expect(s.counter).toBe(before + delta);
       expect(s.lastDelta).toBe(delta);
     },
@@ -97,12 +143,10 @@ describe('counter contract — private inputs are never exposed', () => {
       const publicDelta = 1n;
       const secretCap = 9999n;
       await expect(deployed.callTx.increment(publicDelta, secretCap)).resolves.toBeDefined();
-      await waitFor(
-        async () => (await deployed.queryLedger()).lastDelta === publicDelta,
-        60_000,
+      const after = await waitForLedger(
+        (ledger) => ledger.lastDelta === publicDelta,
         'lastDelta === publicDelta',
       );
-      const after = await deployed.queryLedger();
       expect(after.lastDelta).toBe(publicDelta);
       // The previous transition's delta is still tracked (count grew by 1), and
       // nothing but the two public ledger cells exists on-chain.
