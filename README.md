@@ -9,15 +9,20 @@
 
 ---
 
-## Contract Address
+## Contract Addresses
 
-| Network   | Address                                                                                                                  |
-| --------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Preprod   | `61e6eb487476caa77ad42efaa33fd272d5090d128c592c21efbb4f73a5293260`                                                       |
-| Preview   | *(not deployed)*                                                                                                         |
-| Undeployed (local devnet) | *(deployed on demand via `npm run deploy`)*                                                                  |
+`npm run setup` deploys `hello-world` by default. The deployments captured from
+the setup runs are:
 
-The Preprod deployment of the `counter` contract above is live and indexable.
+| Contract    | Network                 | Address                                                               |
+| ----------- | ----------------------- | --------------------------------------------------------------------- |
+| `hello-world` | Preview               | `ceb74c06aaead115b2176986a03a5ae02dc5e78b7f3f9fdf5fda755d95786264`    |
+| `hello-world` | Preprod               | `1e7ea53d7b0751f3574135605c11b432b003f0b6d846827381365c4caafefa9a`    |
+| `hello-world` | Undeployed (local devnet) | `f180b4742bef75fdcd38426b635251469b19b03a4436cc9a33d5d400a7859e9e` |
+| `counter`     | Preprod               | `61e6eb487476caa77ad42efaa33fd272d5090d128c592c21efbb4f73a5293260`    |
+
+The `counter` address is the separate Level 1 Preprod deployment. To deploy
+that contract again, use `CONTRACT_NAME=counter` with the deploy command.
 
 ---
 
