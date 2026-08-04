@@ -1,0 +1,35 @@
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+// ============================================================================
+//  Privacy model
+// ============================================================================
+//  PUBLIC (on-chain, visible to anyone):
+//    - `counter`   : the current count (public ledger cell)
+//    - `lastDelta` : the amount added in the most recent increment (public ledger cell)
+//
+//  PRIVATE (private witness — never leaves the prover, never written on-chain):
+//    - `secretCap` : a secret upper bound known only to the caller
+//
+//  PROVED WITHOUT REVEALING:
+//    - that the disclosed increment respects the caller's secret cap
+//      (publicDelta <= secretCap). An on-chain observer learns the delta is
+//      within budget, but NEVER learns the cap value itself.
+//    - that the caller indeed knows a valid `secretCap` for every disclosed delta.
+// ============================================================================
+
+export ledger counter: Counter;
+export ledger lastDelta: Uint<16>;
+
+export circuit increment(publicDelta: Uint<16>, secretCap: Uint<16>): [] {
+    // Private constraint: the disclosed delta must be at or below the secret cap.
+    // `secretCap` is a witness here — its value is proven, never disclosed.
+    assert(publicDelta <= secretCap, "public delta exceeds the secret cap");
+
+    // Deliberately disclose the delta: it becomes public ledger state so anyone
+    // can verify the count grew by exactly this amount.
+    const delta: Uint<16> = disclose(publicDelta);
+    counter.increment(delta);
+    lastDelta = delta;
+}
