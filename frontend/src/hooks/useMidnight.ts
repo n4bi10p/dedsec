@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { ConnectedAPI, InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
 
-const TARGET_NETWORK = 'preprod';
+export const TARGET_NETWORK = import.meta.env.VITE_NETWORK ?? 'preview';
 
 export type WalletState = {
   address?: string;

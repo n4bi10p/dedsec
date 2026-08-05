@@ -2,7 +2,7 @@ import { CircuitCall } from './components/CircuitCall';
 import { WalletConnect } from './components/WalletConnect';
 import { useMidnight } from './hooks/useMidnight';
 
-const COUNTER_ADDRESS = '61e6eb487476caa77ad42efaa33fd272d5090d128c592c21efbb4f73a5293260';
+const COUNTER_ADDRESS = import.meta.env.VITE_COUNTER_ADDRESS ?? 'Configure VITE_COUNTER_ADDRESS';
 const COUNTER_ADAPTER_READY = false;
 
 export default function App() {
@@ -18,7 +18,7 @@ export default function App() {
   return (
     <main className="shell">
       <header className="hero">
-        <div className="eyebrow">DEDSEC · Midnight Preprod</div>
+        <div className="eyebrow">DEDSEC · Midnight Preview</div>
         <h1>Private access, publicly verifiable.</h1>
         <p>
           Prove that an API request fits your private budget without exposing the budget itself.

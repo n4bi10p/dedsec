@@ -35,7 +35,7 @@ export function WalletConnect({
     <section className="card wallet-card">
       <div className="eyebrow">Step 1</div>
       <h2>Connect Lace</h2>
-      <p>Connect a Midnight wallet on Preprod to prove your private access budget.</p>
+      <p>Connect a Midnight wallet on {targetNetwork} to prove your private access budget.</p>
       {wallets.length === 0 ? (
         <p className="notice">No Midnight wallet detected. Install Lace and refresh this page.</p>
       ) : (

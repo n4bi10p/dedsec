@@ -8,7 +8,7 @@
 > proven but never disclosed.
 
 > **Level 2 frontend:** a Vite + React browser client is available in
-> [`frontend/`](frontend/). It connects to Lace on Midnight Preprod and keeps
+> [`frontend/`](frontend/). It connects to Lace on Midnight Preview and keeps
 > the private witness local to the browser.
 
 ---
@@ -120,7 +120,8 @@ npm run frontend:dev
 ```
 
 The browser app opens on the Vite development URL and connects to Lace on
-Preprod when a compatible wallet is installed.
+Preview when a compatible wallet is installed. Set `VITE_COUNTER_ADDRESS` to
+the counter deployment for the selected network before enabling contract calls.
 
 ---
 
@@ -169,12 +170,12 @@ verify payment without exposing who paid, how much, or which tier.
 ## Live Demo
 
 > Pending deployment. The production URL will be recorded here after the
-> frontend is deployed to Vercel or Netlify and verified against Preprod.
+> frontend is deployed to Vercel or Netlify and verified against Preview.
 
 ## Demo Video
 
 > Pending recording. The final walkthrough will show wallet connection,
-> Preprod network validation, a counter circuit call, and the privacy claim
+> Preview network validation, a counter circuit call, and the privacy claim
 > without displaying the private witness.
 
 ## Privacy Claim
@@ -182,7 +183,7 @@ verify payment without exposing who paid, how much, or which tier.
 The frontend generates `secretCap` locally and never renders, logs, or sends it
 to the application UI. The counter circuit proves `publicDelta <= secretCap`;
 only the deliberately disclosed delta and public ledger state are submitted.
-The wallet connector is restricted to Midnight **Preprod** and validates the
+The wallet connector is restricted to Midnight **Preview** by default and validates the
 network returned by the connected wallet before enabling the flow.
 
 ## Frontend
