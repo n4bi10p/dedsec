@@ -109,6 +109,19 @@ npm run network preprod        # switch the active network (funded wallet requir
 CONTRACT_NAME=counter npm run deploy -- --network preprod
 ```
 
+## Run Locally
+
+Run the contract workflow from the repository root, or start the Level 2
+frontend separately:
+
+```bash
+npm install
+npm run frontend:dev
+```
+
+The browser app opens on the Vite development URL and connects to Lace on
+Preprod when a compatible wallet is installed.
+
 ---
 
 ## Run Tests
@@ -157,6 +170,12 @@ verify payment without exposing who paid, how much, or which tier.
 
 > Pending deployment. The production URL will be recorded here after the
 > frontend is deployed to Vercel or Netlify and verified against Preprod.
+
+## Demo Video
+
+> Pending recording. The final walkthrough will show wallet connection,
+> Preprod network validation, a counter circuit call, and the privacy claim
+> without displaying the private witness.
 
 ## Privacy Claim
 
