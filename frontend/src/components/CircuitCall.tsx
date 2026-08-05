@@ -2,10 +2,11 @@ import { useState, type FormEvent } from 'react';
 
 type Props = {
   enabled: boolean;
+  disabledReason?: string;
   onSubmit: (publicDelta: bigint, secretCap: bigint) => Promise<string>;
 };
 
-export function CircuitCall({ enabled, onSubmit }: Props) {
+export function CircuitCall({ enabled, disabledReason, onSubmit }: Props) {
   const [publicDelta, setPublicDelta] = useState('1');
   const [isProving, setIsProving] = useState(false);
   const [result, setResult] = useState<string>();
@@ -24,12 +25,12 @@ export function CircuitCall({ enabled, onSubmit }: Props) {
     // The witness is generated locally and is deliberately never rendered,
     // logged, or returned to the UI. The contract proves the bound without
     // disclosing this value.
-    const secretCap = BigInt(1 + Math.floor(Math.random() * 65535));
-    const boundedDelta = delta > secretCap ? secretCap : delta;
+    const remaining = 65535n - delta;
+    const secretCap = delta + (remaining === 0n ? 0n : BigInt(1 + Math.floor(Math.random() * Number(remaining))));
 
     setIsProving(true);
     try {
-      setResult(await onSubmit(boundedDelta, secretCap));
+      setResult(await onSubmit(delta, secretCap));
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Circuit call failed.');
     } finally {
@@ -58,7 +59,7 @@ export function CircuitCall({ enabled, onSubmit }: Props) {
         </button>
       </form>
       <div className="privacy-note">Proved without revealing your input.</div>
-      {!enabled && <p className="notice">Connect Lace before calling the circuit.</p>}
+      {!enabled && <p className="notice">{disabledReason ?? 'Connect Lace before calling the circuit.'}</p>}
       {result && <p className="success">{result}</p>}
       {error && <p className="error">{error}</p>}
     </section>

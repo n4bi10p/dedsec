@@ -23,6 +23,13 @@ export function useMidnight() {
     setState({ isConnecting: true, wallet });
     try {
       const api = await wallet.connect(TARGET_NETWORK);
+      await api.hintUsage([
+        'getConfiguration',
+        'getUnshieldedAddress',
+        'getProvingProvider',
+        'balanceUnsealedTransaction',
+        'submitTransaction',
+      ]);
       const configuration = await api.getConfiguration();
       if (configuration.networkId !== TARGET_NETWORK) {
         throw new Error(`Wallet is connected to ${configuration.networkId}, expected ${TARGET_NETWORK}.`);
