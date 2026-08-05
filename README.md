@@ -7,6 +7,10 @@
 > updated by a circuit whose inputs include a **private witness** that is
 > proven but never disclosed.
 
+> **Level 2 frontend:** a Vite + React browser client is available in
+> [`frontend/`](frontend/). It connects to Lace on Midnight Preprod and keeps
+> the private witness local to the browser.
+
 ---
 
 ## Contract Addresses
@@ -148,6 +152,32 @@ verify payment without exposing who paid, how much, or which tier.
 
 > Placeholder — added as the frontend ships (Level 2) and deployments land on
 > the public networks.
+
+## Live Demo
+
+> Pending deployment. The production URL will be recorded here after the
+> frontend is deployed to Vercel or Netlify and verified against Preprod.
+
+## Privacy Claim
+
+The frontend generates `secretCap` locally and never renders, logs, or sends it
+to the application UI. The counter circuit proves `publicDelta <= secretCap`;
+only the deliberately disclosed delta and public ledger state are submitted.
+The wallet connector is restricted to Midnight **Preprod** and validates the
+network returned by the connected wallet before enabling the flow.
+
+## Frontend
+
+Run the Level 2 client from the repository root:
+
+```bash
+npm run frontend:dev
+npm run frontend:build
+```
+
+For deployment, set the hosting project root to `frontend/`. Vercel can use the
+included `frontend/vercel.json`; Netlify can use `frontend/public/_redirects`
+for SPA fallback routing.
 
 ---
 

@@ -17,3 +17,10 @@ validation are implemented in `src/hooks/useMidnight.ts`.
 
 The browser counter transaction adapter is the next integration milestone. The
 UI already keeps the generated `secretCap` local and never renders or logs it.
+
+## Deploy
+
+Use `frontend/` as the project root in Vercel or Netlify. `vercel.json` and
+`public/_redirects` provide the single-page-app fallback needed for direct
+route loads. The app must be configured for the Midnight **Preprod** network;
+never point this challenge frontend at a mainnet wallet during development.
