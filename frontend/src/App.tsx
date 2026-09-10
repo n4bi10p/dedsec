@@ -1,18 +1,28 @@
+import { useMemo } from 'react';
 import { CircuitCall } from './components/CircuitCall';
 import { WalletConnect } from './components/WalletConnect';
 import { useMidnight } from './hooks/useMidnight';
+import { callIncrement, type IncrementResult } from './lib/counter';
+import { createBrowserProviders, type BrowserProviders } from './lib/midnight';
 
 const COUNTER_ADDRESS = import.meta.env.VITE_COUNTER_ADDRESS ?? 'Configure VITE_COUNTER_ADDRESS';
-const COUNTER_ADAPTER_READY = false;
+const isAddressConfigured = COUNTER_ADDRESS !== 'Configure VITE_COUNTER_ADDRESS';
 
 export default function App() {
   const wallet = useMidnight();
 
-  async function submitIncrement(publicDelta: bigint, _secretCap: bigint): Promise<string> {
-    // The browser transaction/proving adapter is the next integration slice.
-    // Keep this boundary typed so no private witness leaks into UI components.
-    void publicDelta;
-    throw new Error(`Counter adapter is not wired yet for ${COUNTER_ADDRESS}.`);
+  const getProviders = useMemo(() => {
+    let cached: Promise<BrowserProviders> | null = null;
+    return () => {
+      if (!wallet.api) throw new Error('Connect a wallet before calling the circuit.');
+      if (!cached) cached = createBrowserProviders(wallet.api);
+      return cached;
+    };
+  }, [wallet.api]);
+
+  async function submitIncrement(publicDelta: bigint, secretCap: bigint): Promise<IncrementResult> {
+    const providers = await getProviders();
+    return callIncrement(providers, COUNTER_ADDRESS, publicDelta, secretCap);
   }
 
   return (
@@ -27,8 +37,14 @@ export default function App() {
       <div className="grid">
         <WalletConnect {...wallet} />
         <CircuitCall
-          disabledReason={wallet.api ? 'Wallet connected. Browser proving adapter is next.' : undefined}
-          enabled={Boolean(wallet.api) && COUNTER_ADAPTER_READY}
+          disabledReason={
+            !wallet.api
+              ? undefined
+              : !isAddressConfigured
+                ? 'Set VITE_COUNTER_ADDRESS to a Preview counter contract.'
+                : undefined
+          }
+          enabled={Boolean(wallet.api) && isAddressConfigured}
           onSubmit={submitIncrement}
         />
       </div>

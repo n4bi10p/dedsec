@@ -27,6 +27,8 @@ input { background: #0a1729; border: 1px solid #38547b; border-radius: 9px; colo
 .address, footer code { color: #8ef0c5; display: block; font-size: 0.75rem; overflow-wrap: anywhere; }
 .notice, .privacy-note { background: #10233d; border-radius: 10px; color: #b6cae7; font-size: 0.9rem; padding: 12px; }
 .privacy-note { border-left: 3px solid #8ef0c5; margin-top: 18px; }
-.error { color: #ff9b9b; }
-.success { color: #8ef0c5; }
+.error { color: #ff9b9b; overflow-wrap: anywhere; word-break: break-word; }
+.success { color: #8ef0c5; overflow-wrap: anywhere; word-break: break-word; }
+.success a { color: inherit; text-decoration: underline; overflow-wrap: anywhere; word-break: break-all; }
+.circuit-card { min-width: 0; overflow-wrap: anywhere; }
 footer { border-top: 1px solid #203655; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; margin-top: 24px; padding-top: 20px; }

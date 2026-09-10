@@ -34,10 +34,10 @@ export function WalletConnect({
   return (
     <section className="card wallet-card">
       <div className="eyebrow">Step 1</div>
-      <h2>Connect Lace</h2>
+      <h2>Connect 1AM</h2>
       <p>Connect a Midnight wallet on {targetNetwork} to prove your private access budget.</p>
       {wallets.length === 0 ? (
-        <p className="notice">No Midnight wallet detected. Install Lace and refresh this page.</p>
+        <p className="notice">No Midnight wallet detected. Install 1AM and refresh this page.</p>
       ) : (
         <div className="wallet-list">
           {wallets.map((wallet) => (
@@ -48,7 +48,7 @@ export function WalletConnect({
               onClick={() => void connect(wallet)}
               type="button"
             >
-              {isConnecting ? 'Waiting for Lace…' : `Connect ${wallet.name}`}
+              {isConnecting ? 'Waiting for 1AM…' : `Connect ${wallet.name}`}
             </button>
           ))}
         </div>

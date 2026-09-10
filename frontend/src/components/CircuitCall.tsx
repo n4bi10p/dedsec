@@ -1,15 +1,16 @@
 import { useState, type FormEvent } from 'react';
+import { explorerTxUrl, type IncrementResult } from '../lib/counter';
 
 type Props = {
   enabled: boolean;
   disabledReason?: string;
-  onSubmit: (publicDelta: bigint, secretCap: bigint) => Promise<string>;
+  onSubmit: (publicDelta: bigint, secretCap: bigint) => Promise<IncrementResult>;
 };
 
 export function CircuitCall({ enabled, disabledReason, onSubmit }: Props) {
   const [publicDelta, setPublicDelta] = useState('1');
   const [isProving, setIsProving] = useState(false);
-  const [result, setResult] = useState<string>();
+  const [result, setResult] = useState<IncrementResult>();
   const [error, setError] = useState<string>();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -59,8 +60,16 @@ export function CircuitCall({ enabled, disabledReason, onSubmit }: Props) {
         </button>
       </form>
       <div className="privacy-note">Proved without revealing your input.</div>
-      {!enabled && <p className="notice">{disabledReason ?? 'Connect Lace before calling the circuit.'}</p>}
-      {result && <p className="success">{result}</p>}
+      {!enabled && <p className="notice">{disabledReason ?? 'Connect 1AM before calling the circuit.'}</p>}
+      {result && (
+        <p className="success">
+          Increment submitted. Tx{' '}
+          <a href={explorerTxUrl(result.txId)} rel="noreferrer" target="_blank">
+            {result.txId}
+          </a>
+          . {result.message}
+        </p>
+      )}
       {error && <p className="error">{error}</p>}
     </section>
   );

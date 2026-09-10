@@ -21,8 +21,12 @@ Override the network and deployed counter address at build time when needed:
 VITE_NETWORK=preview VITE_COUNTER_ADDRESS=<preview-counter-address> npm run dev
 ```
 
-The browser counter transaction adapter is the next integration milestone. The
-UI already keeps the generated `secretCap` local and never renders or logs it.
+The browser counter transaction adapter is wired in `src/lib/midnight.ts` and
+`src/lib/counter.ts`. It proves with the wallet's proving provider, balances
+with `balanceUnsealedTransaction`, submits with `submitTransaction`, and reads
+back ledger state. The UI keeps the generated `secretCap` local and never
+renders or logs it. Run `npm run sync:zk` after recompiling the contract so
+`public/contract/counter` stays current.
 
 ## Deploy
 
