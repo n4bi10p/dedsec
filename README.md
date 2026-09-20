@@ -13,6 +13,14 @@
 
 ---
 
+## Screenshots
+
+- Screenshot 1 — compile with circuits listed
+<img width="1176" height="201" alt="image" src="https://github.com/user-attachments/assets/d337b723-011d-4a61-847d-c62e51a4bd29" />
+
+- Screenshot 2 — deployed with address shown
+<img width="1404" height="332" alt="image" src="https://github.com/user-attachments/assets/3c0e2afc-fd20-4787-9979-0514e69e6fa9" />
+
 ## Contract Addresses
 
 `npm run setup` deploys `hello-world` by default. The deployments captured from
