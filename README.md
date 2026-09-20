@@ -8,7 +8,7 @@
 > proven but never disclosed.
 
 > **Level 2 frontend:** a Vite + React browser client is available in
-> [`frontend/`](frontend/). It connects to Lace on Midnight Preview and keeps
+> [`frontend/`](frontend/). It connects to 1AM on Midnight Preview and keeps
 > the private witness local to the browser.
 
 ---
@@ -21,19 +21,22 @@
 - Screenshot 2 — deployed with address shown
 <img width="1404" height="332" alt="image" src="https://github.com/user-attachments/assets/3c0e2afc-fd20-4787-9979-0514e69e6fa9" />
 
+---
+
 ## Contract Addresses
 
-`npm run setup` deploys `hello-world` by default. The deployments captured from
-the setup runs are:
+`npm run setup` deploys `hello-world` by default. The `counter` contract is the
+Level 1 / Level 2 privacy contract (`contracts/counter.compact`).
 
-| Contract    | Network                 | Address                                                               |
-| ----------- | ----------------------- | --------------------------------------------------------------------- |
-| `hello-world` | Preview               | `ceb74c06aaead115b2176986a03a5ae02dc5e78b7f3f9fdf5fda755d95786264`    |
-| `hello-world` | Preprod               | `1e7ea53d7b0751f3574135605c11b432b003f0b6d846827381365c4caafefa9a`    |
-| `hello-world` | Undeployed (local devnet) | `f180b4742bef75fdcd38426b635251469b19b03a4436cc9a33d5d400a7859e9e` |
-| `counter`     | Preprod               | `61e6eb487476caa77ad42efaa33fd272d5090d128c592c21efbb4f73a5293260`    |
+| Contract      | Network                   | Address                                                               | Used by |
+| ------------- | ------------------------- | --------------------------------------------------------------------- | ------- |
+| `counter`     | Preview                   | `103ef1adb05ba6ce1391ab40d61e7e756245f4322c300abfa582b4ba5e4467bb`    | Level 2 frontend (`VITE_COUNTER_ADDRESS`) |
+| `counter`     | Preprod                   | `61e6eb487476caa77ad42efaa33fd272d5090d128c592c21efbb4f73a5293260`    | Level 1 Preprod deployment |
+| `hello-world` | Preview                   | `ceb74c06aaead115b2176986a03a5ae02dc5e78b7f3f9fdf5fda755d95786264`    | Scaffold reference |
+| `hello-world` | Preprod                   | `1e7ea53d7b0751f3574135605c11b432b003f0b6d846827381365c4caafefa9a`    | Scaffold reference |
+| `hello-world` | Undeployed (local devnet) | `f180b4742bef75fdcd38426b635251469b19b03a4436cc9a33d5d400a7859e9e` | Local devnet |
 
-The `counter` address is the separate Level 1 Preprod deployment. To deploy
+The `counter` Preview address is the live contract the frontend calls. To deploy
 that contract again, use `CONTRACT_NAME=counter` with the deploy command.
 
 ---
@@ -127,7 +130,7 @@ npm install
 npm run frontend:dev
 ```
 
-The browser app opens on the Vite development URL and connects to Lace on
+The browser app opens on the Vite development URL and connects to 1AM on
 Preview when a compatible wallet is installed. Set `VITE_COUNTER_ADDRESS` to
 the counter deployment for the selected network before enabling contract calls.
 
@@ -170,21 +173,29 @@ verify payment without exposing who paid, how much, or which tier.
 
 ---
 
-## Screenshots
-
-> Placeholder — added as the frontend ships (Level 2) and deployments land on
-> the public networks.
-
 ## Live Demo
 
-> Pending deployment. The production URL will be recorded here after the
-> frontend is deployed to Vercel or Netlify and verified against Preview.
+> Pending deployment. Deploy the frontend and paste the live URL here.
+>
+> ```bash
+> # From the repository root
+> npm run frontend:build
+> # Deploy with the project root set to `frontend/`, then set:
+> # VITE_NETWORK=preview
+> # VITE_COUNTER_ADDRESS=103ef1adb05ba6ce1391ab40d61e7e756245f4322c300abfa582b4ba5e4467bb
+> ```
+>
+> The production URL will be recorded here after the frontend is deployed to
+> Vercel or Netlify and verified against Preview. The app shows an
+> indexer-confirmed transaction hash with a clickable
+> `https://explorer.1am.xyz/tx/<hash>` link after each increment.
 
 ## Demo Video
 
-> Pending recording. The final walkthrough will show wallet connection,
-> Preview network validation, a counter circuit call, and the privacy claim
-> without displaying the private witness.
+> Pending recording. Record under 2 minutes: 1) connect 1AM wallet and show
+> the address, 2) call the increment circuit and show the proving loading
+> state, 3) show the on-chain result with the explorer link, 4) point out the
+> private input was never shown.
 
 ## Privacy Claim
 

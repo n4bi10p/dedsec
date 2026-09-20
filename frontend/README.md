@@ -12,7 +12,7 @@ npm run dev
 ```
 
 The app targets Midnight **Preview** by default and detects wallets that implement the
-Midnight DApp Connector API at `window.midnight`. Lace connection and network
+Midnight DApp Connector API at `window.midnight`. 1AM connection and network
 validation are implemented in `src/hooks/useMidnight.ts`.
 
 Override the network and deployed counter address at build time when needed:
