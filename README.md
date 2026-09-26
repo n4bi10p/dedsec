@@ -192,7 +192,11 @@ verify payment without exposing who paid, how much, or which tier.
 
 ## Demo Video
 
-<video src="dedsec-intro.mp4" controls muted></video>
+<a href="dedsec-intro.mp4">
+  <img src="dedsec-intro-preview.gif" alt="DEDSEC Level 2 demo preview" width="640" />
+</a>
+
+[Open or download the full 36-second MP4 demo](dedsec-intro.mp4).
 
 *36-second walkthrough: connect 1AM, call the increment circuit, watch the
 local proof generate, then see the on-chain result. The private input
