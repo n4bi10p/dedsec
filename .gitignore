@@ -63,3 +63,10 @@ temp/
 #docs
 docs/
 opencode.json
+
+# Vercel
+.vercel
+.vercel/
+
+# TypeScript incremental build info
+*.tsbuildinfo
