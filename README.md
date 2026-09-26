@@ -192,10 +192,11 @@ verify payment without exposing who paid, how much, or which tier.
 
 ## Demo Video
 
-> Pending recording. Record under 2 minutes: 1) connect 1AM wallet and show
-> the address, 2) call the increment circuit and show the proving loading
-> state, 3) show the on-chain result with the explorer link, 4) point out the
-> private input was never shown.
+<video src="dedsec-intro.mp4" controls muted></video>
+
+*36-second walkthrough: connect 1AM, call the increment circuit, watch the
+local proof generate, then see the on-chain result. The private input
+(`secretCap`) is never shown.*
 
 ## Privacy Claim
 
