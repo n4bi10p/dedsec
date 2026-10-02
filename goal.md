@@ -498,11 +498,11 @@ counter before calling Level 2 final.
 
 - [ ] CI workflow runs on pushes and pull requests;
 - [ ] CI badge is green and visible;
-- [ ] `PROPOSAL.md` is complete;
-- [ ] tests cover circuit logic, transitions, and privacy;
-- [ ] frontend build passes cleanly;
-- [ ] README matches the required order;
-- [ ] Preprod address is canonical and documented;
+- [x] `PROPOSAL.md` is complete;
+- [x] tests cover circuit logic, transitions, and privacy;
+- [x] frontend build passes cleanly;
+- [x] README matches the required order;
+- [x] Preprod address is canonical and documented;
 - [ ] one-minute demo evidence is recorded;
 - [ ] at least ten meaningful commits exist;
 - [ ] The Turn proposal is submitted and approved.

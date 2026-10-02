@@ -17,9 +17,14 @@ export function CircuitCall({ enabled, disabledReason, onSubmit }: Props) {
     event.preventDefault();
     setError(undefined);
     setResult(undefined);
-    const delta = BigInt(publicDelta);
-    if (delta < 0n || delta > 65535n) {
-      setError('Public delta must be between 0 and 65535.');
+    const trimmed = publicDelta.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      setError('Public delta must be a whole number from 0 to 65535.');
+      return;
+    }
+    const delta = BigInt(trimmed);
+    if (delta > 65535n) {
+      setError('Public delta must be a whole number from 0 to 65535.');
       return;
     }
 
@@ -40,10 +45,10 @@ export function CircuitCall({ enabled, disabledReason, onSubmit }: Props) {
   }
 
   return (
-    <section className="card circuit-card">
-      <div className="eyebrow">Step 2</div>
+    <section aria-busy={isProving} className="card circuit-card">
+      <p className="micro">Step 2</p>
       <h2>Prove an increment</h2>
-      <p>Generate a local proof that your increment stays within a private budget.</p>
+      <p>Generate a local proof that the increment stays within a private budget.</p>
       <form onSubmit={submit}>
         <label htmlFor="public-delta">Public delta</label>
         <input
@@ -51,24 +56,31 @@ export function CircuitCall({ enabled, disabledReason, onSubmit }: Props) {
           inputMode="numeric"
           min="0"
           max="65535"
+          disabled={isProving}
           onChange={(event) => setPublicDelta(event.target.value)}
-          type="number"
+          type="text"
           value={publicDelta}
         />
         <button className="button primary" disabled={!enabled || isProving} type="submit">
           {isProving ? 'Generating proof…' : 'Call increment circuit'}
         </button>
       </form>
-      <div className="privacy-note">Proved without revealing your input.</div>
+      {isProving && (
+        <p className="notice" role="status">
+          <span className="bar" aria-hidden="true" />
+          Proof is being built locally in this browser.
+        </p>
+      )}
+      <p className="privacy-note">Proved without revealing your input</p>
       {!enabled && <p className="notice">{disabledReason ?? 'Connect 1AM before calling the circuit.'}</p>}
       {result && (
-        <p className="success">
-          Increment submitted. Tx{' '}
-          <a href={explorerTxUrl(result.txId)} rel="noreferrer" target="_blank">
+        <div className="success">
+          <p className="micro">Confirmed</p>
+          <p>Increment submitted. {result.message}</p>
+          <a className="mono" href={explorerTxUrl(result.txId)} rel="noreferrer" target="_blank">
             {result.txId}
           </a>
-          . {result.message}
-        </p>
+        </div>
       )}
       {error && <p className="error">{error}</p>}
     </section>

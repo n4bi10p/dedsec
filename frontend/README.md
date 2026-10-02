@@ -1,36 +1,36 @@
 # DEDSEC frontend
 
-The Level 2 browser frontend is a Vite + React application. It is kept in its
-own directory so the existing Node/TypeScript wallet and deployment scripts in
-the repository's `src/` directory remain unchanged.
+Vite + React client for the counter contract. It lives in this directory so
+the Node deploy scripts at the repository root keep their own `src/`.
 
 ## Run locally
 
+From the repository root:
+
 ```bash
-npm install
+npm run frontend:dev
+npm run frontend:build
+```
+
+Or from this directory, after `npm install`:
+
+```bash
 npm run dev
+npm run build
 ```
 
-The app targets Midnight **Preview** by default and detects wallets that implement the
-Midnight DApp Connector API at `window.midnight`. 1AM connection and network
-validation are implemented in `src/hooks/useMidnight.ts`.
+The dev server and the production build read `VITE_NETWORK` and
+`VITE_COUNTER_ADDRESS`. Checked-in defaults are Midnight **Preprod** and the
+counter address in `.env.development` / `.env.production`. 1AM must be on that
+same network. `src/hooks/useMidnight.ts` rejects a mismatch and leaves the
+circuit disabled.
 
-Override the network and deployed counter address at build time when needed:
-
-```bash
-VITE_NETWORK=preview VITE_COUNTER_ADDRESS=<preview-counter-address> npm run dev
-```
-
-The browser counter transaction adapter is wired in `src/lib/midnight.ts` and
-`src/lib/counter.ts`. It proves with the wallet's proving provider, balances
-with `balanceUnsealedTransaction`, submits with `submitTransaction`, and reads
-back ledger state. The UI keeps the generated `secretCap` local and never
-renders or logs it. Run `npm run sync:zk` after recompiling the contract so
+`secretCap` is created in `src/components/CircuitCall.tsx` and is never
+rendered or logged. Run `npm run sync:zk` after recompiling the contract so
 `public/contract/counter` stays current.
 
 ## Deploy
 
-Use `frontend/` as the project root in Vercel or Netlify. `vercel.json` and
-`public/_redirects` provide the single-page-app fallback needed for direct
-route loads. The app is configured for the Midnight **Preview** network by default;
-never point this challenge frontend at a mainnet wallet during development.
+Use `frontend/` as the project root, or the root `vercel.json`, which builds
+this directory. Redeploy after any `VITE_*` change. Do not point this app at
+mainnet until the launch checklist in `goal.md` says to.

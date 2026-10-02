@@ -1,145 +1,144 @@
 # dedsec
 
-> A privacy-preserving paid-access gateway on the Midnight Network.
->
-> **Level 1** of the Midnight Builder Challenge: a counter contract that
-> demonstrates Midnight's core privacy primitive — a public ledger cell
-> updated by a circuit whose inputs include a **private witness** that is
-> proven but never disclosed.
+[![CI](https://github.com/n4bi10p/dedsec/actions/workflows/ci.yml/badge.svg)](https://github.com/n4bi10p/dedsec/actions/workflows/ci.yml)
 
-> **Level 2 frontend:** a Vite + React browser client is available in
-> [`frontend/`](frontend/). It connects to 1AM on Midnight Preview and keeps
-> the private witness local to the browser.
+A privacy-preserving paid-access gateway on the Midnight Network. The contract
+in this repository is a counter with a private witness: the ledger learns the
+increment, and the caller's budget stays off-chain.
 
----
+## Live Demo
 
-## Screenshots
+https://dedsec-delta.vercel.app
 
-- Screenshot 1 — compile with circuits listed
-<img width="1176" height="201" alt="image" src="https://github.com/user-attachments/assets/d337b723-011d-4a61-847d-c62e51a4bd29" />
+The production bundle reads `frontend/.env.production`, which targets Midnight
+**Preprod**. Vite inlines those values at build time, so a Vercel env change
+does nothing until the project is redeployed. Connect 1AM on Preprod before
+calling the circuit. After a successful increment the UI shows an
+indexer-confirmed transaction hash linked to `https://explorer.1am.xyz/tx/<hash>`.
 
-- Screenshot 2 — deployed with address shown
-<img width="1404" height="332" alt="image" src="https://github.com/user-attachments/assets/3c0e2afc-fd20-4787-9979-0514e69e6fa9" />
+```bash
+npm run frontend:build
+```
 
----
+## Contract Address
 
-## Contract Addresses
+Mandatory Preprod counter:
 
-`npm run setup` deploys `hello-world` by default. The `counter` contract is the
-Level 1 / Level 2 privacy contract (`contracts/counter.compact`).
+```text
+77641b3184ca1a5f0f84c36802953f3a52830c288fe302b6766b0a7d46e50b07
+```
 
-| Contract      | Network                   | Address                                                               | Used by |
-| ------------- | ------------------------- | --------------------------------------------------------------------- | ------- |
-| `counter`     | Preview                   | `103ef1adb05ba6ce1391ab40d61e7e756245f4322c300abfa582b4ba5e4467bb`    | Level 2 frontend (`VITE_COUNTER_ADDRESS`) |
-| `counter`     | Preprod                   | `61e6eb487476caa77ad42efaa33fd272d5090d128c592c21efbb4f73a5293260`    | Level 1 Preprod deployment |
-| `hello-world` | Preview                   | `ceb74c06aaead115b2176986a03a5ae02dc5e78b7f3f9fdf5fda755d95786264`    | Scaffold reference |
-| `hello-world` | Preprod                   | `1e7ea53d7b0751f3574135605c11b432b003f0b6d846827381365c4caafefa9a`    | Scaffold reference |
-| `hello-world` | Undeployed (local devnet) | `f180b4742bef75fdcd38426b635251469b19b03a4436cc9a33d5d400a7859e9e` | Local devnet |
+| Contract | Network | Address | Used by |
+| --- | --- | --- | --- |
+| `counter` | Preprod | `77641b3184ca1a5f0f84c36802953f3a52830c288fe302b6766b0a7d46e50b07` | Frontend (`VITE_COUNTER_ADDRESS`) |
+| `counter` | Preview | `103ef1adb05ba6ce1391ab40d61e7e756245f4322c300abfa582b4ba5e4467bb` | Earlier Preview deployment |
+| `hello-world` | Preprod | `1e7ea53d7b0751f3574135605c11b432b003f0b6d846827381365c4caafefa9a` | Scaffold reference |
+| `hello-world` | Preview | `ceb74c06aaead115b2176986a03a5ae02dc5e78b7f3f9fdf5fda755d95786264` | Scaffold reference |
+| `hello-world` | Undeployed | `f180b4742bef75fdcd38426b635251469b19b03a4436cc9a33d5d400a7859e9e` | Local devnet |
 
-The `counter` Preview address is the live contract the frontend calls. To deploy
-that contract again, use `CONTRACT_NAME=counter` with the deploy command.
-
----
+`npm run setup` deploys `hello-world` by default. Deploy the counter with
+`CONTRACT_NAME=counter`.
 
 ## What This Does
 
 `contracts/counter.compact` is a small on-chain counter with a privacy twist:
 
 - The **counter value** and the **last delta** live in public ledger cells.
-- Every increment is a **circuit** that takes two inputs:
+- Every increment is a circuit with two inputs:
   - `publicDelta` — disclosed, written to the ledger;
-  - `secretCap` — a **private witness** known only to the caller.
-- The circuit proves `publicDelta <= secretCap` — i.e. "this increment stayed
-  within the caller's secret budget" — **without ever revealing the cap**.
+  - `secretCap` — a private witness known only to the caller.
+- The circuit proves `publicDelta <= secretCap` without revealing the cap.
 
-This is the same shape DEDSEC will use at higher levels as a paid-access
-gateway: a caller proves (off-chain) that they hold a valid, unexpired paid
-credential for a given tier, and only the minimal fact is verified on-chain.
-On the public ledger you learn *that* an increment happened and *how much*
-it was; you never learn *who* authorized the budget or *what* their budget is.
-
----
+That is the shape of the paid-access gateway: a caller proves a request fits a
+private budget, and the ledger records only the fact that was deliberately
+disclosed. The browser client lives in [`frontend/`](frontend/). It connects
+to 1AM, generates the proof locally, and never renders the witness.
 
 ## Privacy Model
 
-| Data               | Visibility | Notes                                                                |
-| ------------------ | ---------- | -------------------------------------------------------------------- |
-| `counter`          | **Public** | On-chain ledger cell — anyone can read it via the indexer.            |
-| `lastDelta`        | **Public** | On-chain ledger cell — the disclosed portion of the most recent call. |
-| `secretCap`        | **Private**| Circuit witness — a local ZK input, proven, never written on-chain.   |
-| `publicDelta`      | **Public** | Deliberately `disclose()`d so the ledger grows by an exact amount.    |
+| Data | Visibility | Notes |
+| --- | --- | --- |
+| `counter` | **Public** | On-chain ledger cell. Anyone can read it through the indexer. |
+| `lastDelta` | **Public** | On-chain ledger cell. The disclosed size of the latest call. |
+| `publicDelta` | **Proved**, then **Public** | Passed through `disclose()` so the ledger grows by an exact amount. |
+| `secretCap` | **Private** | Circuit witness. Proven, never written on-chain, never shown in the UI. |
 
-The `disclose()` call is deliberate: it is the *only* channel by which input
-data reaches the ledger. Everything else in the circuit (the cap, the fact of
-knowing a valid cap) is a zero-knowledge proof. Tests assert that the ledger
-contains exactly the two public fields and nothing else.
+`disclose()` is the only channel from an input to the ledger. Tests assert
+that the ledger contains `counter` and `lastDelta` and nothing else.
 
----
+## Privacy Claim
+
+The frontend generates `secretCap` locally and never renders, logs, or sends
+it to the application UI. The counter circuit proves `publicDelta <= secretCap`.
+Only the deliberately disclosed delta and the public ledger state are
+submitted. The wallet connector checks the network from `getConfiguration()`
+and refuses the circuit call when 1AM is on a different network than
+`VITE_NETWORK`. The screen label is: Proved without revealing your input.
 
 ## Tech Stack
 
-| Layer        | Technology                                                        |
-| ------------ | ----------------------------------------------------------------- |
-| Language     | Compact (Midnight's ZK-native smart contract language)            |
-| Compiler     | `compact 0.5.1`                                                    |
-| SDK          | `@midnight-ntwrk/*` `4.1.1` (`midnight-js-contracts`, `wallet-sdk 1.2.0`, `compact-runtime 0.16.0`) |
-| Testing      | Vitest `4.x` + local devnet (node, indexer, proof-server)         |
-| Devnet       | Docker Compose (`midnightntwrk/midnight-node:1.0.0`, `indexer-standalone:4.3.3`, `proof-server:8.1.0`) |
-| Runtime      | Node.js ≥ 22                                                      |
+| Layer | Technology |
+| --- | --- |
+| Language | Compact |
+| Compiler | `compact 0.5.1` |
+| SDK | `@midnight-ntwrk/*` `4.1.1` (`midnight-js-contracts`, `wallet-sdk 1.2.0`, `compact-runtime 0.16.0`) |
+| Frontend | React 19 + Vite, in `frontend/` |
+| Wallet | 1AM through the Midnight DApp Connector API |
+| Testing | Vitest 4 + local devnet (node, indexer, proof server) |
+| Devnet | Docker Compose (`midnightntwrk/midnight-node:1.0.0`, `indexer-standalone:4.3.3`, `proof-server:8.1.0`) |
+| Runtime | Node.js 22 |
 
----
+This repository is a monorepo. Contract tooling is at the root. The browser
+app is in `frontend/` because it has its own `package.json`. CI installs and
+builds that directory explicitly. See [Project structure](#project-structure).
 
 ## Prerequisites
 
-- Node.js ≥ 22
-- Docker with Docker Compose v2 (for the local devnet)
+- Node.js 22 or newer
+- Docker with Docker Compose v2, for the local devnet and the test suite
 - The Compact compiler pinned to `0.5.1`
-- `npm install`
+- 1AM, for the browser flow
 
 ```bash
 npm install
+npm install --prefix frontend
 ```
 
----
+## Setup & Run Locally
 
-## Setup
-
-Start the local devnet, compile the contracts, and deploy to it:
+Start the local devnet, compile, and deploy:
 
 ```bash
-npm run compile                # compiles hello-world + counter to contracts/managed/
-docker compose up -d --wait    # node, indexer, proof-server
-npm run deploy                 # deploy hello-world to the local devnet
-CONTRACT_NAME=counter npm run deploy   # deploy the counter contract
+npm run compile
+docker compose up -d --wait
+npm run deploy
+CONTRACT_NAME=counter npm run deploy
 ```
 
-To deploy the counter contract to **Preprod**:
+Run the browser app from the repository root:
 
 ```bash
-npm run network preprod        # switch the active network (funded wallet required)
+npm run frontend:dev
+npm run frontend:build
+```
+
+`frontend/.env.development` points the dev server at the Preprod counter.
+Switch 1AM to Preprod before connecting. To deploy the counter again on
+Preprod, with a funded wallet:
+
+```bash
+npm run network preprod
 CONTRACT_NAME=counter npm run deploy -- --network preprod
 ```
 
-## Run Locally
-
-Run the contract workflow from the repository root, or start the Level 2
-frontend separately:
-
-```bash
-npm install
-npm run frontend:dev
-```
-
-The browser app opens on the Vite development URL and connects to 1AM on
-Preview when a compatible wallet is installed. Set `VITE_COUNTER_ADDRESS` to
-the counter deployment for the selected network before enabling contract calls.
-
----
+For hosting, set the project root to `frontend/`. The root `vercel.json`
+builds that directory. `frontend/public/_redirects` is the Netlify SPA
+fallback.
 
 ## Run Tests
 
-`npm test` brings up the devnet (if needed), compiles the contracts, and runs
-the Level 1 test suite against the local devnet:
+`npm test` compiles the contracts, starts the devnet if needed, and runs the
+counter suite against the local devnet:
 
 ```bash
 npm test
@@ -151,179 +150,143 @@ To run only the counter tests against an already-running devnet:
 npx vitest run tests/counter.test.ts
 ```
 
-The suite covers the three Level 1 requirements:
+The suite covers the three required areas:
 
-1. **Circuit logic** — an increment within the secret cap succeeds; an
-   increment exceeding the cap is rejected and leaves state untouched.
-2. **State transitions** — `counter` and `lastDelta` update correctly across
-   sequential increments.
-3. **Privacy** — the ledger exposes exactly `counter` and `lastDelta`; the
-   private witness (`secretCap`) never appears on-chain.
+1. **Circuit logic** — an increment within the secret cap succeeds; an increment past the cap is rejected and leaves state untouched.
+2. **State transitions** — `counter` and `lastDelta` update across sequential increments, including the boundary where the delta equals the cap.
+3. **Privacy** — the ledger exposes exactly `counter` and `lastDelta`. `secretCap` never appears on-chain.
 
----
+## CI/CD
 
-## Initial Idea
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to
+`main` and on pull requests.
 
-> Placeholder — the full DEDSEC pitch is developed in **Level 3 (PROPOSAL.md)**.
+The contract job:
 
-DEDSEC is a privacy-preserving paid-access gateway (x402-style): customers buy
-paid API / compute access with shielded tNIGHT, and prove local "paid
-credential for tier X, valid until T" in zero-knowledge so the gateway can
-verify payment without exposing who paid, how much, or which tier.
+1. checks out the repository
+2. installs Node.js 22
+3. installs Compact `0.5.1`
+4. runs `npm ci`
+5. compiles the Compact contracts
+6. runs `npm test`
 
----
+The frontend job installs `frontend/` and runs `npm run frontend:build`.
+Either job failing fails the workflow.
 
-## Live Demo
+The badge at the top of this file tracks that workflow.
 
-> Pending deployment. Deploy the frontend and paste the live URL here.
->
-> ```bash
-> # From the repository root
-> npm run frontend:build
-> # Deploy with the project root set to `frontend/`, then set:
-> # VITE_NETWORK=preview
-> # VITE_COUNTER_ADDRESS=103ef1adb05ba6ce1391ab40d61e7e756245f4322c300abfa582b4ba5e4467bb
-> ```
->
-> The production URL will be recorded here after the frontend is deployed to
-> Vercel or Netlify and verified against Preview. The app shows an
-> indexer-confirmed transaction hash with a clickable
-> `https://explorer.1am.xyz/tx/<hash>` link after each increment.
+## Product Proposal
+
+The product write-up is [PROPOSAL.md](PROPOSAL.md): who DEDSEC is for, why the
+proof belongs on Midnight, the public and private data model, and what has to
+be true before mainnet.
+
+## Screenshots
+
+- Compile, with the `increment` circuit listed
+
+<img width="1176" height="201" alt="Compact compile output listing the increment circuit" src="https://github.com/user-attachments/assets/d337b723-011d-4a61-847d-c62e51a4bd29" />
+
+- Deploy, with the contract address shown
+
+<img width="1404" height="332" alt="Counter deployment output with the contract address" src="https://github.com/user-attachments/assets/3c0e2afc-fd20-4787-9979-0514e69e6fa9" />
 
 ## Demo Video
 
 <a href="dedsec-intro.mp4">
-  <img src="dedsec-intro-preview.gif" alt="DEDSEC Level 2 demo preview" width="640" />
+  <img src="dedsec-intro-preview.gif" alt="DEDSEC demo preview" width="640" />
 </a>
 
-[Open or download the full 36-second MP4 demo](dedsec-intro.mp4).
+[Open or download the MP4 demo](dedsec-intro.mp4).
 
-*36-second walkthrough: connect 1AM, call the increment circuit, watch the
-local proof generate, then see the on-chain result. The private input
-(`secretCap`) is never shown.*
-
-## Privacy Claim
-
-The frontend generates `secretCap` locally and never renders, logs, or sends it
-to the application UI. The counter circuit proves `publicDelta <= secretCap`;
-only the deliberately disclosed delta and public ledger state are submitted.
-The wallet connector is restricted to Midnight **Preview** by default and validates the
-network returned by the connected wallet before enabling the flow.
-
-## Frontend
-
-Run the Level 2 client from the repository root:
-
-```bash
-npm run frontend:dev
-npm run frontend:build
-```
-
-For deployment, set the hosting project root to `frontend/`. Vercel can use the
-included `frontend/vercel.json`; Netlify can use `frontend/public/_redirects`
-for SPA fallback routing.
-
----
+The recording connects 1AM, calls the increment circuit, waits for the local
+proof, and shows the on-chain result. `secretCap` is never on screen. A
+one-minute Level 3 recording that also shows the test output and the green CI
+badge is still to be captured after this workflow has run.
 
 ## Local devnet
 
-| Service        | Port | Purpose                                         |
-| -------------- | ---- | ----------------------------------------------- |
-| `node`         | 9944 | Midnight node, `dev` chain preset               |
-| `indexer`      | 8088 | GraphQL indexer for chain state                 |
-| `proof-server` | 6300 | Generates ZK proofs for contract transactions   |
-
-Tear everything down with:
+| Service | Port | Purpose |
+| --- | --- | --- |
+| `node` | 9944 | Midnight node, `dev` chain preset |
+| `indexer` | 8088 | GraphQL indexer for chain state |
+| `proof-server` | 6300 | ZK proofs for contract transactions |
 
 ```bash
 docker compose down -v
 ```
 
-## ⚠️ LOCAL DEVNET ONLY
-
 The deploy script uses a well-known genesis seed (`0000…0001`) so the
-pre-minted NIGHT in the `dev` chain preset is immediately available. **Do
-not use this seed against Preprod, mainnet, or any environment that
-handles real value.**
+pre-minted NIGHT in the `dev` chain preset is available immediately. Do not
+use this seed against Preprod, mainnet, or any environment that handles real
+value.
 
 ## Networks
 
-| Network | When to use | Default? |
-|---|---|---|
-| `undeployed` | Local devnet bundled in `docker-compose.yml`. Genesis seed is hardcoded; no funding needed. | yes |
-| `preview` | Public preview testnet. Faucet at `https://midnight-tmnight-preview.nethermind.dev`. |  |
-| `preprod` | Public preprod testnet. Faucet at `https://midnight-tmnight-preprod.nethermind.dev`. |  |
+| Network | When to use | Default for local scripts? |
+| --- | --- | --- |
+| `undeployed` | Local devnet in `docker-compose.yml`. Genesis seed is hardcoded. | yes |
+| `preview` | Public preview testnet. Faucet: `https://midnight-tmnight-preview.nethermind.dev` | |
+| `preprod` | Challenge network for the frontend and for user testing. Faucet: `https://midnight-tmnight-preprod.nethermind.dev` | frontend |
 
-The active network is **sticky**. Switch with `npm run network <name>` or
-`--network <name>` on any command. Switch back to local devnet with
+The script network is sticky. Switch with `npm run network <name>` or
+`--network <name>`. Return to the local devnet with
 `npm run network undeployed`.
 
-### Environment overrides
-
 | Variable | Effect |
-|---|---|
-| `MIDNIGHT_WALLET_SEED` | Use this seed instead of generating/persisting one. |
+| --- | --- |
+| `MIDNIGHT_WALLET_SEED` | Use this seed instead of generating one. |
 | `MIDNIGHT_INDEXER_URL` | Override the indexer GraphQL URL. |
-| `MIDNIGHT_INDEXER_WS_URL` | Override the indexer WS URL. |
+| `MIDNIGHT_INDEXER_WS_URL` | Override the indexer WebSocket URL. |
 | `MIDNIGHT_NODE_URL` | Override the node RPC URL. |
 | `MIDNIGHT_FAUCET_URL` | Override the faucet URL printed during setup. |
 | `MIDNIGHT_PROOF_SERVER_URL` | Override the proof server URL. |
 | `MIDNIGHT_FAUCET_TIMEOUT_MS` | Faucet poll budget in milliseconds (default 600000). |
 
-### Wallet sync cache
-
-After each `deploy`, `cli`, or `check-balance` run, the scripts serialize the
-wallet's synced state to `.midnight-wallet-state/<network>/` (gitignored).
-The next run on the same network restores from that snapshot and only catches
-up instead of replaying from genesis.
+After `deploy`, `cli`, or `check-balance`, the scripts store the wallet's
+synced state in `.midnight-wallet-state/<network>/` (gitignored). The next run
+on that network restores the snapshot.
 
 ## Available scripts
 
-| Script                  | Description                                                    |
-| ----------------------- | -------------------------------------------------------------- |
-| `npm run setup`         | One-shot: start devnet, compile, deploy.                       |
-| `npm run compile`       | Compile the Compact contracts (`hello-world`, `counter`).      |
-| `npm run deploy`        | Deploy the compiled contract (requires devnet up + compiled).  |
-| `npm run deploy:counter`| Deploy the `counter` contract.                                 |
-| `npm run cli`           | Interactive CLI to call circuits on the deployed contract.     |
-| `npm run check-balance` | Print the genesis-seed wallet's NIGHT and DUST balances.       |
-| `npm test`              | Compile + start devnet + run Vitest suite.                     |
-| `npm run test:e2e`      | Smoke + read-back check against the deployed contract.         |
-| `npm run clean`         | Remove `contracts/managed/`, `.midnight-state.json`, and `.midnight-wallet-state/`. |
-| `npm run proof-server:start` / `:stop` | Compose lifecycle for just the proof-server service. |
+| Script | Description |
+| --- | --- |
+| `npm run setup` | Start the devnet, compile, and deploy. |
+| `npm run compile` | Compile `hello-world` and `counter`. |
+| `npm run deploy` | Deploy the selected contract. |
+| `npm run deploy:counter` | Deploy the `counter` contract. |
+| `npm run cli` | Call circuits on the deployed contract. |
+| `npm run check-balance` | Print NIGHT and DUST balances. |
+| `npm test` | Compile, start the devnet, and run Vitest. |
+| `npm run test:e2e` | Smoke and read-back check. |
+| `npm run frontend:dev` | Start the Vite app. |
+| `npm run frontend:build` | Typecheck and build the Vite app. |
+| `npm run clean` | Remove compiled artifacts and local wallet state. |
 
 ## Project structure
 
-```
+```text
 dedsec/
 ├── contracts/
-│   ├── counter.compact        # Level 1 contract (public ledger + private witness + disclose)
-│   └── hello-world.compact    # scaffold contract
-├── contracts/managed/         # compiled artifacts (gitignored outputs)
+│   ├── counter.compact
+│   └── hello-world.compact
+├── contracts/managed/          # compiler output, gitignored
+├── frontend/                   # React + Vite client
 ├── tests/
-│   ├── counter.test.ts        # Level 1 test suite
+│   ├── counter.test.ts
 │   └── helpers/contract-deploy.ts
-├── scripts/
-│   └── e2e-check.ts           # smoke + read-back
-├── src/
-│   ├── network.ts             # network selection + state file management
-│   ├── wallet.ts              # wallet construction + sync-state cache
-│   ├── setup.ts               # orchestrator for `npm run setup`
-│   ├── deploy.ts              # deploy a contract (CONTRACT_NAME selects which)
-│   ├── cli.ts                 # interact with deployed contract
-│   └── check-balance.ts       # NIGHT / DUST balance
-├── docker-compose.yml         # node + indexer + proof-server
-├── .midnight-state.json       # written by deploy (gitignored)
-├── .midnight-wallet-state/    # serialized sync state per network (gitignored)
-├── package.json
-└── tsconfig.json
+├── src/                        # Node deploy, CLI, and wallet scripts
+├── .github/workflows/ci.yml
+├── PROPOSAL.md
+├── docker-compose.yml
+└── package.json
 ```
 
 ## Compact compiler version
 
-The compiler is pinned to `0.5.1`. To change versions:
+The compiler is pinned to `0.5.1`.
 
 ```bash
-compact update <version>
-compact use <version>
+compact update 0.5.1
+compact use 0.5.1
 ```

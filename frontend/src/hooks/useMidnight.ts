@@ -9,6 +9,7 @@ export type WalletState = {
   wallet?: InitialAPI;
   error?: string;
   isConnecting: boolean;
+  walletNetwork?: string;
 };
 
 function availableWallets(): InitialAPI[] {
@@ -31,11 +32,24 @@ export function useMidnight() {
         'submitTransaction',
       ]);
       const configuration = await api.getConfiguration();
-      if (configuration.networkId !== TARGET_NETWORK) {
-        throw new Error(`Wallet is connected to ${configuration.networkId}, expected ${TARGET_NETWORK}.`);
-      }
       const { unshieldedAddress } = await api.getUnshieldedAddress();
-      setState({ isConnecting: false, wallet, api, address: unshieldedAddress });
+      if (configuration.networkId !== TARGET_NETWORK) {
+        setState({
+          isConnecting: false,
+          wallet,
+          address: unshieldedAddress,
+          walletNetwork: configuration.networkId,
+          error: `Wallet is connected to ${configuration.networkId}, expected ${TARGET_NETWORK}.`,
+        });
+        return;
+      }
+      setState({
+        isConnecting: false,
+        wallet,
+        api,
+        address: unshieldedAddress,
+        walletNetwork: configuration.networkId,
+      });
     } catch (error) {
       setState({
         isConnecting: false,

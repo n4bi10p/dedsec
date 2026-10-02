@@ -1,5 +1,6 @@
 import type { InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
 import type { WalletState } from '../hooks/useMidnight';
+import { shortId } from '../lib/format';
 
 type Props = WalletState & {
   wallets: InitialAPI[];
@@ -10,20 +11,39 @@ type Props = WalletState & {
 
 export function WalletConnect({
   address,
-  api,
   error,
   isConnecting,
   wallets,
   targetNetwork,
+  walletNetwork,
   connect,
   disconnect,
 }: Props) {
-  if (api && address) {
+  const mismatch = Boolean(error && walletNetwork && walletNetwork !== targetNetwork);
+
+  if (address) {
     return (
-      <section className="card wallet-card">
-        <div className="eyebrow">Wallet connected</div>
-        <h2>{targetNetwork} network</h2>
-        <code className="address">{address}</code>
+      <section className={`card ${mismatch ? 'card-alert' : ''}`}>
+        <div className="card-top">
+          <p className="micro">{mismatch ? 'Wrong network' : 'Wallet connected'}</p>
+          {mismatch && <span className="pill warn">{walletNetwork}</span>}
+        </div>
+        <p className="network-name">{mismatch ? walletNetwork : targetNetwork}</p>
+        <code className="mono" title={address}>
+          {shortId(address)}
+        </code>
+        {mismatch && (
+          <dl className="pair">
+            <div>
+              <dt>Detected</dt>
+              <dd>{walletNetwork}</dd>
+            </div>
+            <div>
+              <dt>Required</dt>
+              <dd>{targetNetwork}</dd>
+            </div>
+          </dl>
+        )}
         <button className="button secondary" onClick={disconnect} type="button">
           Disconnect
         </button>
@@ -32,10 +52,10 @@ export function WalletConnect({
   }
 
   return (
-    <section className="card wallet-card">
-      <div className="eyebrow">Step 1</div>
+    <section className="card">
+      <p className="micro">Step 1</p>
       <h2>Connect 1AM</h2>
-      <p>Connect a Midnight wallet on {targetNetwork} to prove your private access budget.</p>
+      <p>Connect a Midnight wallet on {targetNetwork} to prove a private access budget.</p>
       {wallets.length === 0 ? (
         <p className="notice">No Midnight wallet detected. Install 1AM and refresh this page.</p>
       ) : (
